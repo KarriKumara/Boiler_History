@@ -6,6 +6,7 @@
  */
 package fi.opc.ua.server;
 
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
@@ -23,14 +24,15 @@ import com.prosysopc.ua.nodes.UaNodeFactoryException;
 import com.prosysopc.ua.nodes.UaObject;
 import com.prosysopc.ua.nodes.UaObjectType;
 import com.prosysopc.ua.nodes.UaType;
+import com.prosysopc.ua.server.HistoryManagerListener;
 import com.prosysopc.ua.server.NodeManagerUaNode;
 import com.prosysopc.ua.server.UaInstantiationException;
 import com.prosysopc.ua.server.UaServer;
+import com.prosysopc.ua.server.nodes.PlainProperty;
 import com.prosysopc.ua.server.nodes.PlainVariable;
 import com.prosysopc.ua.server.nodes.UaObjectNode;
 import com.prosysopc.ua.server.nodes.UaObjectTypeNode;
 import com.prosysopc.ua.server.nodes.UaVariableNode;
-import com.prosysopc.ua.types.opcua.server.BaseEventTypeNode;
 import com.prosysopc.ua.types.opcua.server.FolderTypeNode;
 
 /**
@@ -38,14 +40,14 @@ import com.prosysopc.ua.types.opcua.server.FolderTypeNode;
  * NodeManagerUaNode and initializes the nodes for the demo.
  */
 public class MyNodeManager extends NodeManagerUaNode {
-	public static final String NAMESPACE = "http://www.prosysopc.com/OPCUA/SampleAddressSpace";
-	private static final Logger logger = Logger.getLogger(MyNodeManager.class);
-	//private static boolean stackTraceOnException;
+    public static final String NAMESPACE = "http://www.prosysopc.com/OPCUA/SampleAddressSpace";
+    private static final Logger logger = Logger.getLogger(MyNodeManager.class);
+    //private static boolean stackTraceOnException;
 
-	/**
-	 * @param e
-	 */
-	/*
+    /**
+     * @param e
+     */
+    /*
 	private static void printException(Exception e) {
 		if (stackTraceOnException)
 			e.printStackTrace();
@@ -55,389 +57,521 @@ public class MyNodeManager extends NodeManagerUaNode {
 				println("Caused by: " + e.getCause());
 		}
 	}
-	*/
+     */
 
-	/**
-	 * @param string
-	 */
-	protected static void println(String string) {
-		System.out.println(string);
-	}
+    /**
+     * @param string
+     */
+    protected static void println(String string) {
+        System.out.println(string);
+    }
 
-	// private MyEventType myEvent;
+    // private MyEventType myEvent;
 
-	private FolderTypeNode myObjectsFolder;
+    private FolderTypeNode myObjectsFolder;
 
-	double dx = 1;
+    double dx = 1;
 
-	final MyEventManagerListener myEventManagerListener = new MyEventManagerListener();
+    final MyEventManagerListener myEventManagerListener = new MyEventManagerListener();
 
-	/**
-	 * Creates a new instance of MyNodeManager
-	 *
-	 * @param server
-	 *            the server in which the node manager is created.
-	 * @param namespaceUri
-	 *            the namespace URI for the nodes
-	 * @throws StatusException
-	 *             if something goes wrong in the initialization
-	 * @throws UaInstantiationException
-	 */
-	public MyNodeManager(UaServer server, String namespaceUri)
-			throws StatusException, UaInstantiationException {
-		super(server, namespaceUri);
-	}
+    /**
+     * Creates a new instance of MyNodeManager
+     *
+     * @param server
+     *            the server in which the node manager is created.
+     * @param namespaceUri
+     *            the namespace URI for the nodes
+     * @throws StatusException
+     *             if something goes wrong in the initialization
+     * @throws UaInstantiationException
+     */
+    public MyNodeManager(UaServer server, String namespaceUri)
+            throws StatusException, UaInstantiationException {
+        super(server, namespaceUri);
+    }
 
-	/**
-	 * @return
-	 */
-	public UaVariableNode[] getHistorizableVariables() {
-		return new UaVariableNode[] { };
-	}
+    /**
+     * @return
+     */
+    public UaVariableNode[] getHistorizableVariables() {
+        return new UaVariableNode[] { };
+    }
 
-	/**
-	 * @return
-	 */
-	public UaObjectNode[] getHistorizableEvents() {
-		return new UaObjectNode[] { myObjectsFolder };
-	}
+    /**
+     * @return
+     */
+    public UaObjectNode[] getHistorizableEvents() {
+        return new UaObjectNode[] { myObjectsFolder };
+    }
 
-	/**
-	 *
-	 */
-	public void sendEvent() {
-		// If the type has TypeDefinitionId, you can use the class
-		MyEventType ev = createEvent(MyEventType.class);
-		ev.setMessage("MyEvent");
-		ev.setMyVariable(new Random().nextInt());
-		ev.setMyProperty("Property Value " + ev.getMyVariable());
-		ev.triggerEvent(null);
-	}
+    /**
+     *
+     */
+    public void sendEvent() {
+        // If the type has TypeDefinitionId, you can use the class
+        MyEventType ev = createEvent(MyEventType.class);
+        ev.setMessage("MyEvent");
+        ev.setMyVariable(new Random().nextInt());
+        ev.setMyProperty("Property Value " + ev.getMyVariable());
+        ev.triggerEvent(null);
+    }
 
-	private void createAddressSpace() throws StatusException,
-			UaInstantiationException {
-		// +++ My nodes +++
+    private void createAddressSpace() throws StatusException,
+    UaInstantiationException {
+        // +++ My nodes +++
 
-		int ns = getNamespaceIndex();
+        int ns = getNamespaceIndex();
 
-		// My Event Manager Listener
-		this.getEventManager().setListener(myEventManagerListener);
+        // My Event Manager Listener
+        this.getEventManager().setListener(myEventManagerListener);
 
-		// UA types and folders which we will use
-		final UaObject objectsFolder = getServer().getNodeManagerRoot()
-				.getObjectsFolder();
-		final UaType baseObjectType = getServer().getNodeManagerRoot().getType(
-				Identifiers.BaseObjectType);
-		final UaType baseDataVariableType = getServer().getNodeManagerRoot()
-				.getType(Identifiers.BaseDataVariableType);
+        // UA types and folders which we will use
+        final UaObject objectsFolder = getServer().getNodeManagerRoot()
+                .getObjectsFolder();
+        final UaType baseObjectType = getServer().getNodeManagerRoot().getType(
+                Identifiers.BaseObjectType);
+        final UaType baseDataVariableType = getServer().getNodeManagerRoot()
+                .getType(Identifiers.BaseDataVariableType);
 
-		// Folder for my objects
-		final NodeId myObjectsFolderId = new NodeId(ns, "MyObjectsFolder");
-		myObjectsFolder = createInstance(FolderTypeNode.class, "MyObjects",
-				myObjectsFolderId);
+        // Folder for my objects
+        final NodeId myObjectsFolderId = new NodeId(ns, "MyObjectsFolder");
+        myObjectsFolder = createInstance(FolderTypeNode.class, "MyObjects",
+                myObjectsFolderId);
 
-		this.addNodeAndReference(objectsFolder, myObjectsFolder,
-				Identifiers.Organizes);
+        this.addNodeAndReference(objectsFolder, myObjectsFolder,
+                Identifiers.Organizes);
 
-		// My Device Type
+        // My Device Type
 
-		final NodeId myDeviceTypeId = new NodeId(ns, "MyDeviceType");
-		UaObjectType myDeviceType = new UaObjectTypeNode(this, myDeviceTypeId,
-				"MyDeviceType", Locale.ENGLISH);
-		this.addNodeAndReference(baseObjectType, myDeviceType,
-				Identifiers.HasSubtype);
+        final NodeId myDeviceTypeId = new NodeId(ns, "MyDeviceType");
+        UaObjectType myDeviceType = new UaObjectTypeNode(this, myDeviceTypeId,
+                "MyDeviceType", Locale.ENGLISH);
+        this.addNodeAndReference(baseObjectType, myDeviceType,
+                Identifiers.HasSubtype);
 
-//		createBoilerAddressSpace(ns, baseObjectType, 1);
-		createMultiBoilerAddressSpace(ns, baseObjectType);
-//		createTransformedBoilerAddressSpace(ns, baseObjectType);
-	}
+        MyHistorian historian = (MyHistorian)this.getHistoryManager().getListener();		
 
-	private void createBoilerAddressSpace(int ns, UaType baseObjectType, int number) throws StatusException
-	{
-		//Boiler
-		UaObjectType boilerType = createType(ns, "BoilerType", baseObjectType);
-		UaObjectNode boiler = createNode(ns, "Boiler" + number, boilerType, myObjectsFolder);
-		
-		//Pipe1001
-		UaObjectType pipeType = createType(ns, "PipeType", baseObjectType);
-		UaObjectNode pipe1 = createNode(ns, "Pipe" + number + "001", pipeType, boiler);
+        //		createBoilerAddressSpace(ns, baseObjectType, 1);
+        //		createMultiBoilerAddressSpace(ns, baseObjectType);
+        //		createTransformedBoilerAddressSpace(ns, baseObjectType);
+        createMultiHBoilerAddressSpace(ns, baseObjectType, historian);
+    }
 
-		//FT1001
-		UaObjectType ftType = createType(ns, "FTType", baseObjectType);
-		UaObjectNode ft1 = createNode(ns, "FT" + number + "001", ftType, pipe1);
+    private void createHistorizingBoilerAddressSpace(int ns, UaType baseObjectType, int number, MyHistorian historian) throws StatusException
+    {
+        NodeId historicalDataConfigurationId = new NodeId(ns, "HistoricalDataConfiguration");
+        UaNode historicalDataConfiguration = createInstance(Identifiers.HistoricalDataConfigurationType, "Historical Data Configuration", historicalDataConfigurationId);
+        historicalDataConfiguration.getProperty(new QualifiedName("Stepped")).setValue(false);
+        NodeId startOfArchiveId = new NodeId(ns, "startOfArchive");
+        PlainProperty<DateTime> startOfArchive = new PlainProperty<DateTime>(this, startOfArchiveId, "StartOfArchive", Locale.ENGLISH);
+        startOfArchive.setValue(new GregorianCalendar());
+        startOfArchive.setDataType(this.getType(Identifiers.UtcTime));
+        NodeId minTimeIntervalId = new NodeId(ns, "MinTimeInterval");
+        PlainProperty<Double> minTimeInterval = new PlainProperty<Double>(this, minTimeIntervalId, "MinTimeInterval", Locale.ENGLISH);
+        minTimeInterval.setValue(10);
+        minTimeInterval.setDataType(this.getType(Identifiers.Duration));
+        NodeId maxTimeIntervalId = new NodeId(ns, "MinTimeInterval");
+        PlainProperty<Double> maxTimeInterval = new PlainProperty<Double>(this, maxTimeIntervalId, "MinTimeInterval", Locale.ENGLISH);
+        minTimeInterval.setValue(20);
+        minTimeInterval.setDataType(this.getType(Identifiers.Duration));
+        historicalDataConfiguration.addProperty(startOfArchive);
+        historicalDataConfiguration.addProperty(minTimeInterval);
+        historicalDataConfiguration.addProperty(maxTimeInterval);
+        
+        
+        //Boiler
+        UaObjectType boilerType = createType(ns, "BoilerType", baseObjectType);
+        UaObjectNode boiler = createNode(ns, "Boiler" + number, boilerType, myObjectsFolder);
 
-		//FT1001/DataItem
-		PlainVariable<Double> ft1data = createVariable(ns, "DataItem", (double)1.0, Identifiers.Double, ft1);
-		
-		//Valve1001
-		UaObjectType valveType = createType(ns, "ValveType", baseObjectType);
-		UaObjectNode valve1 = createNode(ns, "Valve" + number + "001", valveType, pipe1);
+        //Pipe1001
+        UaObjectType pipeType = createType(ns, "PipeType", baseObjectType);
+        UaObjectNode pipe1 = createNode(ns, "Pipe" + number + "001", pipeType, boiler);
 
-		//Valve1001/DataItem
-		PlainVariable<Double> valve1data = createVariable(ns, "DataItem", (double)2.0, Identifiers.Double, valve1);
-		
-		//Drum1001
-		UaObjectType drumType = createType(ns, "DrumType", baseObjectType);
-		UaObjectNode drum1 = createNode(ns, "Drum" + number + "001", drumType, boiler);
+        //FT1001
+        UaObjectType ftType = createType(ns, "FTType", baseObjectType);
+        UaObjectNode ft1 = createNode(ns, "FT" + number + "001", ftType, pipe1);
 
-		//LI1001
-		UaObjectType liType = createType(ns, "LIType", baseObjectType);
-		UaObjectNode li1 = createNode(ns, "LI" + number + "001", liType, drum1);
+        //FT1001/DataItem
+        PlainVariable<Double> ft1data = createVariable(ns, "DataItem", 1.0, Identifiers.Double, ft1);
+        historian.addVariableHistory(ft1data); ft1data.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
 
-		//LI1001/DataItem
-		PlainVariable<Double> li1data = createVariable(ns, "DataItem", (double)3.0, Identifiers.Double, li1);
+        //Valve1001
+        UaObjectType valveType = createType(ns, "ValveType", baseObjectType);
+        UaObjectNode valve1 = createNode(ns, "Valve" + number + "001", valveType, pipe1);
 
-		//Pipe1001
-		UaObjectNode pipe2 = createNode(ns, "Pipe" + number + "002", pipeType, boiler);
+        //Valve1001/DataItem
+        PlainVariable<Double> valve1data = createVariable(ns, "DataItem", 2.0, Identifiers.Double, valve1);
+        historian.addVariableHistory(valve1data); valve1data.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
 
-		//FT1001
-		UaObjectNode ft2 = createNode(ns, "FT" + number + "002", ftType, pipe2);
+        //Drum1001
+        UaObjectType drumType = createType(ns, "DrumType", baseObjectType);
+        UaObjectNode drum1 = createNode(ns, "Drum" + number + "001", drumType, boiler);
 
-		//FT1001/DataItem
-		PlainVariable<Double> ft2data = createVariable(ns, "DataItem", (double)4.0, Identifiers.Double, ft2);
-		
-		//FC1001
-		UaObjectType controllerType = createType(ns, "ControllerType", baseObjectType);
-		UaObjectNode fc1 = createNode(ns, "FC" + number + "001", controllerType, boiler);
+        //LI1001
+        UaObjectType liType = createType(ns, "LIType", baseObjectType);
+        UaObjectNode li1 = createNode(ns, "LI" + number + "001", liType, drum1);
 
-		//FT1001/variables
-		PlainVariable<Double> fc1meas = createVariable(ns, "Measurement", (double)5.1, Identifiers.Double, fc1);
-		PlainVariable<Double> fc1out = createVariable(ns, "ControlOut", (double)5.2, Identifiers.Double, fc1);
-		PlainVariable<Double> fc1set = createVariable(ns, "SetPoint", (double)5.3, Identifiers.Double, fc1);
+        //LI1001/DataItem
+        PlainVariable<Double> li1data = createVariable(ns, "DataItem", 3.0, Identifiers.Double, li1);
+        historian.addVariableHistory(li1data); li1data.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
 
-		//LC1001
-		UaObjectNode lc1 = createNode(ns, "LC" + number + "001", controllerType, boiler);
+        //Pipe1001
+        UaObjectNode pipe2 = createNode(ns, "Pipe" + number + "002", pipeType, boiler);
 
-		//FT1001/variables
-		PlainVariable<Double> lc1meas = createVariable(ns, "Measurement", (double)6.1, Identifiers.Double, lc1);
-		PlainVariable<Double> lc1out = createVariable(ns, "ControlOut", (double)6.2, Identifiers.Double, lc1);
-		/*PlainVariable<Double> lc1set = */createVariable(ns, "SetPoint", (double)6.3, Identifiers.Double, lc1);
+        //FT1001
+        UaObjectNode ft2 = createNode(ns, "FT" + number + "002", ftType, pipe2);
 
-		//LC1001
-		UaObjectNode cc1 = createNode(ns, "CC" + number + "001", controllerType, boiler);
+        //FT1001/DataItem
+        PlainVariable<Double> ft2data = createVariable(ns, "DataItem", 4.0, Identifiers.Double, ft2);
+        historian.addVariableHistory(ft2data); ft2data.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
 
-		//FT1001/variables
-		PlainVariable<Double> cc1in1 = createVariable(ns, "Input1", (double)7.1, Identifiers.Double, cc1);
-		PlainVariable<Double> cc1in2 = createVariable(ns, "Input2", (double)7.2, Identifiers.Double, cc1);
-		PlainVariable<Double> cc1in3 = createVariable(ns, "Input3", (double)7.3, Identifiers.Double, cc1);
-		PlainVariable<Double> cc1out = createVariable(ns, "ControlOut", (double)7.3, Identifiers.Double, cc1);
-		
-		
-		//**** OLD NODES ****//
-		
-		//TODO: CUSTOM REFERENCES
-		pipe1.addReference(drum1, Identifiers.HasEffect, false);
-		drum1.addReference(pipe2, Identifiers.HasEffect, false);
-		
-		ft1data.addReference(fc1meas, Identifiers.HasEffect, false);
-		ft1data.addReference(cc1in2, Identifiers.HasEffect, false);
-		li1data.addReference(lc1meas, Identifiers.HasEffect, false);
-		ft2data.addReference(cc1in3, Identifiers.HasEffect, false);
-		
-		fc1out.addReference(valve1data, Identifiers.HasEffect, false);
-		lc1out.addReference(cc1in1, Identifiers.HasEffect, false);
-		cc1out.addReference(fc1set, Identifiers.HasEffect, false);
-	}
-	
-	private void createMultiBoilerAddressSpace(int ns, UaType baseObjectType) throws StatusException {
-		for(int i=1; i < 4; i++) {
-			createBoilerAddressSpace(ns, baseObjectType, i);
-		}
-		
-	}
-	
-	private void createTransformedBoilerAddressSpace(int ns, UaType baseObjectType) throws StatusException
-	{
-		//Boiler
-		UaObjectType boilerType = createType(ns, "BoilerType", baseObjectType);
-		UaObjectNode boiler = createNode(ns, "Boiler", boilerType, myObjectsFolder);
-		
-		//Pipe1001
-//		UaObjectType pipeType = createType(ns, "PipeType", baseObjectType);
-//		UaObjectNode pipe1 = createNode(ns, "Pipe1001", pipeType, boiler);
+        //FC1001
+        UaObjectType controllerType = createType(ns, "ControllerType", baseObjectType);
+        UaObjectNode fc1 = createNode(ns, "FC" + number + "001", controllerType, boiler);
 
-		//FT1001
-//		UaObjectType ftType = createType(ns, "FTType", baseObjectType);
-//		UaObjectNode ft1 = createNode(ns, "FT1001", ftType, pipe1);
+        //FT1001/variables
+        PlainVariable<Double> fc1meas = createVariable(ns, "Measurement", 5.1, Identifiers.Double, fc1);
+        PlainVariable<Double> fc1out = createVariable(ns, "ControlOut", 5.2, Identifiers.Double, fc1);
+        PlainVariable<Double> fc1set = createVariable(ns, "SetPoint", 5.3, Identifiers.Double, fc1);
+        historian.addVariableHistory(fc1meas); fc1meas.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        historian.addVariableHistory(fc1out); fc1out.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        historian.addVariableHistory(fc1set); fc1set.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        
+        fc1meas.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
 
-		//FT1001/DataItem
-		PlainVariable<Double> ft1data = createVariable(ns, "FT1001", (double)1.0, Identifiers.Double, boiler);
-		
-		//Valve1001
-//		UaObjectType valveType = createType(ns, "ValveType", baseObjectType);
-//		UaObjectNode valve1 = createNode(ns, "Valve1001", valveType, pipe1);
+        //LC1001
+        UaObjectNode lc1 = createNode(ns, "LC" + number + "001", controllerType, boiler);
 
-		//Valve1001/DataItem
-//		PlainVariable<Double> valve1data = createVariable(ns, "DataItem", (double)2.0, Identifiers.Double, valve1);
-		
-		//Drum1001
-//		UaObjectType drumType = createType(ns, "DrumType", baseObjectType);
-//		UaObjectNode drum1 = createNode(ns, "Drum1001", drumType, boiler);
+        //FT1001/variables
+        PlainVariable<Double> lc1meas = createVariable(ns, "Measurement", 6.1, Identifiers.Double, lc1);
+        PlainVariable<Double> lc1out = createVariable(ns, "ControlOut", 6.2, Identifiers.Double, lc1);
+        historian.addVariableHistory(lc1meas); lc1meas.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        historian.addVariableHistory(lc1out); lc1out.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        /*PlainVariable<Double> lc1set = */createVariable(ns, "SetPoint", 6.3, Identifiers.Double, lc1);
 
-		//LI1001
-//		UaObjectType liType = createType(ns, "LIType", baseObjectType);
-//		UaObjectNode li1 = createNode(ns, "LI1001", liType, drum1);
+        //LC1001
+        UaObjectNode cc1 = createNode(ns, "CC" + number + "001", controllerType, boiler);
 
-		//LI1001/DataItem
-		PlainVariable<Double> li1data = createVariable(ns, "LI1001", (double)3.0, Identifiers.Double, boiler);
+        //FT1001/variables
+        PlainVariable<Double> cc1in1 = createVariable(ns, "Input1", 7.1, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1in2 = createVariable(ns, "Input2", 7.2, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1in3 = createVariable(ns, "Input3", 7.3, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1out = createVariable(ns, "ControlOut", 7.3, Identifiers.Double, cc1);
+        historian.addVariableHistory(cc1in1); cc1in1.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        historian.addVariableHistory(cc1in2); cc1in2.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        historian.addVariableHistory(cc1in2); cc1in2.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
+        historian.addVariableHistory(cc1out); cc1out.addNewReference(historicalDataConfiguration, Identifiers.HasHistoricalConfiguration, false);
 
-		//Pipe1001
-//		UaObjectNode pipe2 = createNode(ns, "Pipe1002", pipeType, boiler);
 
-		//FT1001
-//		UaObjectNode ft2 = createNode(ns, "FT1002", ftType, pipe2);
+        //**** OLD NODES ****//
 
-		//FT1001/DataItem
-		PlainVariable<Double> ft2data = createVariable(ns, "FT1002", (double)4.0, Identifiers.Double, boiler);
-		
-		//FC1001
-		UaObjectType controllerType = createType(ns, "ControllerType", baseObjectType);
-		UaObjectNode fc1 = createNode(ns, "FC1001", controllerType, boiler);
+        //TODO: CUSTOM REFERENCES
+        pipe1.addReference(drum1, Identifiers.HasEffect, false);
+        drum1.addReference(pipe2, Identifiers.HasEffect, false);
 
-		//FT1001/variables
-		PlainVariable<Double> fc1meas = createVariable(ns, "Measurement", (double)5.1, Identifiers.Double, fc1);
-		PlainVariable<Double> fc1out = createVariable(ns, "ControlOut", (double)5.2, Identifiers.Double, fc1);
-		PlainVariable<Double> fc1set = createVariable(ns, "SetPoint", (double)5.3, Identifiers.Double, fc1);
+        ft1data.addReference(fc1meas, Identifiers.HasEffect, false);
+        ft1data.addReference(cc1in2, Identifiers.HasEffect, false);
+        li1data.addReference(lc1meas, Identifiers.HasEffect, false);
+        ft2data.addReference(cc1in3, Identifiers.HasEffect, false);
 
-		//LC1001
-		UaObjectNode lc1 = createNode(ns, "LC1001", controllerType, boiler);
+        fc1out.addReference(valve1data, Identifiers.HasEffect, false);
+        lc1out.addReference(cc1in1, Identifiers.HasEffect, false);
+        cc1out.addReference(fc1set, Identifiers.HasEffect, false);
+    }
 
-		//FT1001/variables
-		PlainVariable<Double> lc1meas = createVariable(ns, "Measurement", (double)6.1, Identifiers.Double, lc1);
-		PlainVariable<Double> lc1out = createVariable(ns, "ControlOut", (double)6.2, Identifiers.Double, lc1);
-		/*PlainVariable<Double> lc1set = */createVariable(ns, "SetPoint", (double)6.3, Identifiers.Double, lc1);
+    private void createBoilerAddressSpace(int ns, UaType baseObjectType, int number) throws StatusException
+    {
+        //Boiler
+        UaObjectType boilerType = createType(ns, "BoilerType", baseObjectType);
+        UaObjectNode boiler = createNode(ns, "Boiler" + number, boilerType, myObjectsFolder);
 
-		//LC1001
-		UaObjectNode cc1 = createNode(ns, "CC1001", controllerType, boiler);
+        //Pipe1001
+        UaObjectType pipeType = createType(ns, "PipeType", baseObjectType);
+        UaObjectNode pipe1 = createNode(ns, "Pipe" + number + "001", pipeType, boiler);
 
-		//FT1001/variables
-		PlainVariable<Double> cc1in1 = createVariable(ns, "Input1", (double)7.1, Identifiers.Double, cc1);
-		PlainVariable<Double> cc1in2 = createVariable(ns, "Input2", (double)7.2, Identifiers.Double, cc1);
-		PlainVariable<Double> cc1in3 = createVariable(ns, "Input3", (double)7.3, Identifiers.Double, cc1);
-		PlainVariable<Double> cc1out = createVariable(ns, "ControlOut", (double)7.3, Identifiers.Double, cc1);
-		
-		
-		//**** OLD NODES ****//
-		
-		//TODO: CUSTOM REFERENCE TYPES
-		ft1data.addReference(li1data, Identifiers.HasEffect, false);
-		li1data.addReference(ft2data, Identifiers.HasEffect, false);
-		
-		ft1data.addReference(fc1meas, Identifiers.HasEffect, false);
-		ft1data.addReference(cc1in2, Identifiers.HasEffect, false);
-		li1data.addReference(lc1meas, Identifiers.HasEffect, false);
-		ft2data.addReference(cc1in3, Identifiers.HasEffect, false);
-		
-//		fc1out.addReference(valve1data, Identifiers.HasEffect, false);
-		lc1out.addReference(cc1in1, Identifiers.HasEffect, false);
-		cc1out.addReference(fc1set, Identifiers.HasEffect, false);
-	}
-	
-	private UaObjectType createType(int ns, String name, UaType parent) throws StatusException
-	{
-		final NodeId id = new NodeId(ns, name + UUID.randomUUID());
-		UaObjectType type = new UaObjectTypeNode(this, id, name, Locale.ENGLISH);
-		this.addNodeAndReference(parent, type, Identifiers.HasSubtype);
+        //FT1001
+        UaObjectType ftType = createType(ns, "FTType", baseObjectType);
+        UaObjectNode ft1 = createNode(ns, "FT" + number + "001", ftType, pipe1);
 
-		return type;
-	}
-	
-	private UaObjectNode createNode(int ns, String name, UaObjectType type, UaObjectNode parent)
-	{
-		final NodeId id = new NodeId(ns, name + UUID.randomUUID());
-		UaObjectNode node = new UaObjectNode(this, id, name, Locale.ENGLISH);
-		node.setTypeDefinition(type);
-		parent.addReference(node, Identifiers.HasComponent, false);
-		
-		return node;
-	}
-	
-	private static boolean TESTNODE = false;
-	private <T> PlainVariable<T> createVariable(int ns, String name, T value, NodeId dataTypeId, UaObjectNode parent)
-	{
-		NodeId id = new NodeId(ns, name + UUID.randomUUID());
-		if(!TESTNODE && dataTypeId == Identifiers.Double) {
-			TESTNODE = true;
-			id = new NodeId(ns, "TESTNODE");
-		}
+        //FT1001/DataItem
+        PlainVariable<Double> ft1data = createVariable(ns, "DataItem", 1.0, Identifiers.Double, ft1);
 
-		PlainVariable<T> variable = new PlainVariable<T>(this, id, name, LocalizedText.NO_LOCALE);
-		
-		variable.setDataTypeId(dataTypeId);
-		
-		variable.setTypeDefinitionId(Identifiers.BaseDataVariableType);
-		parent.addComponent(variable);
-		variable.setCurrentValue(value);
+        //Valve1001
+        UaObjectType valveType = createType(ns, "ValveType", baseObjectType);
+        UaObjectNode valve1 = createNode(ns, "Valve" + number + "001", valveType, pipe1);
 
-		return variable;
-	}
-	
-	/**
-	 * @return
-	 */
-	protected byte[] getNextUserEventId() {
-		return myEventManagerListener.getNextUserEventId();
-	}
+        //Valve1001/DataItem
+        PlainVariable<Double> valve1data = createVariable(ns, "DataItem", 2.0, Identifiers.Double, valve1);
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.prosysopc.ua.server.NodeManagerUaNode#init()
-	 */
-	@Override
-	protected void init() throws StatusException, UaNodeFactoryException {
-		super.init();
+        //Drum1001
+        UaObjectType drumType = createType(ns, "DrumType", baseObjectType);
+        UaObjectNode drum1 = createNode(ns, "Drum" + number + "001", drumType, boiler);
 
-		createAddressSpace();
-	}
+        //LI1001
+        UaObjectType liType = createType(ns, "LIType", baseObjectType);
+        UaObjectNode li1 = createNode(ns, "LI" + number + "001", liType, drum1);
 
-	/**
-	 *
-	 */
-	// protected void initMyEvent() {
-	// if (myEvent == null)
-	// myEvent = new MyEventType(this);
-	// }
+        //LI1001/DataItem
+        PlainVariable<Double> li1data = createVariable(ns, "DataItem", 3.0, Identifiers.Double, li1);
 
-	/**
-	 * Send an event
-	 *
-	 * @throws StatusException
-	 */
-	// protected void sendEvent() throws StatusException {
-	// // 1. send a standard SystemEventType here
-	// SystemEventTypeNode newEvent = createEvent(SystemEventTypeNode.class);
-	//
-	// newEvent.setMessage("New event");
-	// // Set the severity of the event between 1 and 1000
-	// newEvent.setSeverity(1);
-	// // By default the event is sent for the "Server" object. If you want to
-	// // send it for some other object, use Source (or SourceNode), e.g.
-	// // newEvent.setSource(myDevice);
-	// triggerEvent(newEvent);
-	//
-	// // 2. Send our own event
-	//
-	// initMyEvent();
-	// myEvent.setSource(myObjectsFolder);
-	//
-	// myEvent.setMyVariable(myEvent.getMyVariable() + 1);
-	// myEvent.setMyProperty(DateTime.currentTime().toString());
-	// triggerEvent(myEvent);
-	// this.deleteNode(myEvent, true, true);
-	// }
+        //Pipe1001
+        UaObjectNode pipe2 = createNode(ns, "Pipe" + number + "002", pipeType, boiler);
 
-	void deleteNode(QualifiedName nodeName) throws StatusException {
-		UaNode node = myObjectsFolder.getComponent(nodeName);
-		if (node != null) {
-			getServer().getNodeManagerRoot().beginModelChange();
-			try {
-				this.deleteNode(node, true, true);
-			} finally {
-				getServer().getNodeManagerRoot().endModelChange();
-			}
-		} else
-			println("MyObjects does not contain a component with name "
-					+ nodeName);
-	}
+        //FT1001
+        UaObjectNode ft2 = createNode(ns, "FT" + number + "002", ftType, pipe2);
+
+        //FT1001/DataItem
+        PlainVariable<Double> ft2data = createVariable(ns, "DataItem", 4.0, Identifiers.Double, ft2);
+
+        //FC1001
+        UaObjectType controllerType = createType(ns, "ControllerType", baseObjectType);
+        UaObjectNode fc1 = createNode(ns, "FC" + number + "001", controllerType, boiler);
+
+        //FT1001/variables
+        PlainVariable<Double> fc1meas = createVariable(ns, "Measurement", 5.1, Identifiers.Double, fc1);
+        PlainVariable<Double> fc1out = createVariable(ns, "ControlOut", 5.2, Identifiers.Double, fc1);
+        PlainVariable<Double> fc1set = createVariable(ns, "SetPoint", 5.3, Identifiers.Double, fc1);
+
+        //LC1001
+        UaObjectNode lc1 = createNode(ns, "LC" + number + "001", controllerType, boiler);
+
+        //FT1001/variables
+        PlainVariable<Double> lc1meas = createVariable(ns, "Measurement", 6.1, Identifiers.Double, lc1);
+        PlainVariable<Double> lc1out = createVariable(ns, "ControlOut", 6.2, Identifiers.Double, lc1);
+        /*PlainVariable<Double> lc1set = */createVariable(ns, "SetPoint", 6.3, Identifiers.Double, lc1);
+
+        //LC1001
+        UaObjectNode cc1 = createNode(ns, "CC" + number + "001", controllerType, boiler);
+
+        //FT1001/variables
+        PlainVariable<Double> cc1in1 = createVariable(ns, "Input1", 7.1, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1in2 = createVariable(ns, "Input2", 7.2, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1in3 = createVariable(ns, "Input3", 7.3, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1out = createVariable(ns, "ControlOut", 7.3, Identifiers.Double, cc1);
+
+
+        //**** OLD NODES ****//
+
+        //TODO: CUSTOM REFERENCES
+        pipe1.addReference(drum1, Identifiers.HasEffect, false);
+        drum1.addReference(pipe2, Identifiers.HasEffect, false);
+
+        ft1data.addReference(fc1meas, Identifiers.HasEffect, false);
+        ft1data.addReference(cc1in2, Identifiers.HasEffect, false);
+        li1data.addReference(lc1meas, Identifiers.HasEffect, false);
+        ft2data.addReference(cc1in3, Identifiers.HasEffect, false);
+
+        fc1out.addReference(valve1data, Identifiers.HasEffect, false);
+        lc1out.addReference(cc1in1, Identifiers.HasEffect, false);
+        cc1out.addReference(fc1set, Identifiers.HasEffect, false);
+    }
+
+    private void createMultiBoilerAddressSpace(int ns, UaType baseObjectType) throws StatusException {
+        for(int i=1; i < 4; i++) {
+            createBoilerAddressSpace(ns, baseObjectType, i);
+        }
+
+    }
+
+    private void createMultiHBoilerAddressSpace(int ns, UaType baseObjectType, MyHistorian historian) throws StatusException {
+        for(int i=1; i < 4; i++) {
+            createHistorizingBoilerAddressSpace(ns, baseObjectType, i, historian);
+        }
+
+    }
+
+    private void createTransformedBoilerAddressSpace(int ns, UaType baseObjectType) throws StatusException
+    {
+        //Boiler
+        UaObjectType boilerType = createType(ns, "BoilerType", baseObjectType);
+        UaObjectNode boiler = createNode(ns, "Boiler", boilerType, myObjectsFolder);
+
+        //Pipe1001
+        //		UaObjectType pipeType = createType(ns, "PipeType", baseObjectType);
+        //		UaObjectNode pipe1 = createNode(ns, "Pipe1001", pipeType, boiler);
+
+        //FT1001
+        //		UaObjectType ftType = createType(ns, "FTType", baseObjectType);
+        //		UaObjectNode ft1 = createNode(ns, "FT1001", ftType, pipe1);
+
+        //FT1001/DataItem
+        PlainVariable<Double> ft1data = createVariable(ns, "FT1001", 1.0, Identifiers.Double, boiler);
+
+        //Valve1001
+        //		UaObjectType valveType = createType(ns, "ValveType", baseObjectType);
+        //		UaObjectNode valve1 = createNode(ns, "Valve1001", valveType, pipe1);
+
+        //Valve1001/DataItem
+        //		PlainVariable<Double> valve1data = createVariable(ns, "DataItem", (double)2.0, Identifiers.Double, valve1);
+
+        //Drum1001
+        //		UaObjectType drumType = createType(ns, "DrumType", baseObjectType);
+        //		UaObjectNode drum1 = createNode(ns, "Drum1001", drumType, boiler);
+
+        //LI1001
+        //		UaObjectType liType = createType(ns, "LIType", baseObjectType);
+        //		UaObjectNode li1 = createNode(ns, "LI1001", liType, drum1);
+
+        //LI1001/DataItem
+        PlainVariable<Double> li1data = createVariable(ns, "LI1001", 3.0, Identifiers.Double, boiler);
+
+        //Pipe1001
+        //		UaObjectNode pipe2 = createNode(ns, "Pipe1002", pipeType, boiler);
+
+        //FT1001
+        //		UaObjectNode ft2 = createNode(ns, "FT1002", ftType, pipe2);
+
+        //FT1001/DataItem
+        PlainVariable<Double> ft2data = createVariable(ns, "FT1002", 4.0, Identifiers.Double, boiler);
+
+        //FC1001
+        UaObjectType controllerType = createType(ns, "ControllerType", baseObjectType);
+        UaObjectNode fc1 = createNode(ns, "FC1001", controllerType, boiler);
+
+        //FT1001/variables
+        PlainVariable<Double> fc1meas = createVariable(ns, "Measurement", 5.1, Identifiers.Double, fc1);
+        PlainVariable<Double> fc1out = createVariable(ns, "ControlOut", 5.2, Identifiers.Double, fc1);
+        PlainVariable<Double> fc1set = createVariable(ns, "SetPoint", 5.3, Identifiers.Double, fc1);
+
+        //LC1001
+        UaObjectNode lc1 = createNode(ns, "LC1001", controllerType, boiler);
+
+        //FT1001/variables
+        PlainVariable<Double> lc1meas = createVariable(ns, "Measurement", 6.1, Identifiers.Double, lc1);
+        PlainVariable<Double> lc1out = createVariable(ns, "ControlOut", 6.2, Identifiers.Double, lc1);
+        /*PlainVariable<Double> lc1set = */createVariable(ns, "SetPoint", 6.3, Identifiers.Double, lc1);
+
+        //LC1001
+        UaObjectNode cc1 = createNode(ns, "CC1001", controllerType, boiler);
+
+        //FT1001/variables
+        PlainVariable<Double> cc1in1 = createVariable(ns, "Input1", 7.1, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1in2 = createVariable(ns, "Input2", 7.2, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1in3 = createVariable(ns, "Input3", 7.3, Identifiers.Double, cc1);
+        PlainVariable<Double> cc1out = createVariable(ns, "ControlOut", 7.3, Identifiers.Double, cc1);
+
+
+        //**** OLD NODES ****//
+
+        //TODO: CUSTOM REFERENCE TYPES
+        ft1data.addReference(li1data, Identifiers.HasEffect, false);
+        li1data.addReference(ft2data, Identifiers.HasEffect, false);
+
+        ft1data.addReference(fc1meas, Identifiers.HasEffect, false);
+        ft1data.addReference(cc1in2, Identifiers.HasEffect, false);
+        li1data.addReference(lc1meas, Identifiers.HasEffect, false);
+        ft2data.addReference(cc1in3, Identifiers.HasEffect, false);
+
+        //		fc1out.addReference(valve1data, Identifiers.HasEffect, false);
+        lc1out.addReference(cc1in1, Identifiers.HasEffect, false);
+        cc1out.addReference(fc1set, Identifiers.HasEffect, false);
+    }
+
+    private UaObjectType createType(int ns, String name, UaType parent) throws StatusException
+    {
+        final NodeId id = new NodeId(ns, name + UUID.randomUUID());
+        UaObjectType type = new UaObjectTypeNode(this, id, name, Locale.ENGLISH);
+        this.addNodeAndReference(parent, type, Identifiers.HasSubtype);
+
+        return type;
+    }
+
+    private UaObjectNode createNode(int ns, String name, UaObjectType type, UaObjectNode parent)
+    {
+        final NodeId id = new NodeId(ns, name + UUID.randomUUID());
+        UaObjectNode node = new UaObjectNode(this, id, name, Locale.ENGLISH);
+        node.setTypeDefinition(type);
+        parent.addReference(node, Identifiers.HasComponent, false);
+
+        return node;
+    }
+
+    private static boolean TESTNODE = false;
+    private <T> PlainVariable<T> createVariable(int ns, String name, T value, NodeId dataTypeId, UaObjectNode parent)
+    {
+        NodeId id = new NodeId(ns, name + UUID.randomUUID());
+        if(!TESTNODE && dataTypeId == Identifiers.Double) {
+            TESTNODE = true;
+            id = new NodeId(ns, "TESTNODE");
+        }
+
+        PlainVariable<T> variable = new PlainVariable<T>(this, id, name, LocalizedText.NO_LOCALE);
+
+        variable.setDataTypeId(dataTypeId);
+
+        variable.setTypeDefinitionId(Identifiers.BaseDataVariableType);
+        parent.addComponent(variable);
+        variable.setCurrentValue(value);
+
+        return variable;
+    }
+
+    /**
+     * @return
+     */
+    protected byte[] getNextUserEventId() {
+        return myEventManagerListener.getNextUserEventId();
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see com.prosysopc.ua.server.NodeManagerUaNode#init()
+     */
+    @Override
+    protected void init() throws StatusException, UaNodeFactoryException {
+        super.init();
+
+        createAddressSpace();
+    }
+
+    /**
+     *
+     */
+    // protected void initMyEvent() {
+    // if (myEvent == null)
+    // myEvent = new MyEventType(this);
+    // }
+
+    /**
+     * Send an event
+     *
+     * @throws StatusException
+     */
+    // protected void sendEvent() throws StatusException {
+    // // 1. send a standard SystemEventType here
+    // SystemEventTypeNode newEvent = createEvent(SystemEventTypeNode.class);
+    //
+    // newEvent.setMessage("New event");
+    // // Set the severity of the event between 1 and 1000
+    // newEvent.setSeverity(1);
+    // // By default the event is sent for the "Server" object. If you want to
+    // // send it for some other object, use Source (or SourceNode), e.g.
+    // // newEvent.setSource(myDevice);
+    // triggerEvent(newEvent);
+    //
+    // // 2. Send our own event
+    //
+    // initMyEvent();
+    // myEvent.setSource(myObjectsFolder);
+    //
+    // myEvent.setMyVariable(myEvent.getMyVariable() + 1);
+    // myEvent.setMyProperty(DateTime.currentTime().toString());
+    // triggerEvent(myEvent);
+    // this.deleteNode(myEvent, true, true);
+    // }
+
+    void deleteNode(QualifiedName nodeName) throws StatusException {
+        UaNode node = myObjectsFolder.getComponent(nodeName);
+        if (node != null) {
+            getServer().getNodeManagerRoot().beginModelChange();
+            try {
+                this.deleteNode(node, true, true);
+            } finally {
+                getServer().getNodeManagerRoot().endModelChange();
+            }
+        } else
+            println("MyObjects does not contain a component with name "
+                    + nodeName);
+    }
 }

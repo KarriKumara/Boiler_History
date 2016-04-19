@@ -20,9 +20,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.opcfoundation.ua.builtintypes.DataValue;
@@ -384,6 +381,8 @@ public class ConsoleServer {
 	protected NodeManagerListener myNodeManagerListener = new MyNodeManagerListener();
 	protected UaServer server;
 	protected final UserValidator userValidator = new MyUserValidator();
+	
+
 
 	protected final CertificateValidationListener validationListener = new MyCertificateValidationListener();
 
@@ -428,7 +427,7 @@ public class ConsoleServer {
 		// You can use Strings for 0 namespace index, QualifiedNames for 1-step
 		// paths and BrowsePaths for full paths
 		// Each type interface has constants for it's structure (1-step deep)
-		conf.addOptional(AnalogItemType.DEFINITION);
+		conf.addOptional(DataItemType.DEFINITION);
 
 		// Use the NodeBuilder to create the node
 		final AnalogItemType node = complianceNodeManager
@@ -771,8 +770,8 @@ public class ConsoleServer {
 
 		// My Node Manager
 		myNodeManager = new MyNodeManager(server, MyNodeManager.NAMESPACE);
-
 		myNodeManager.addListener(myNodeManagerListener);
+		
 
 		// My I/O Manager Listener
 		myNodeManager.getIoManager().addListeners(new MyIoManagerListener());
@@ -1080,7 +1079,8 @@ public class ConsoleServer {
 	
 	//Simulation thread
 	Thread thread = new Thread(){
-	    public void run(){
+	    @Override
+		public void run(){
 	    	System.out.println("Thread Running");
 	    	
 	    	UaVariable testNode = null;

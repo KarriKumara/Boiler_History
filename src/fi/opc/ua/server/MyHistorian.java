@@ -111,14 +111,14 @@ public class MyHistorian implements HistoryManagerListener {
 			HistoryReadValueId[] nodesToRead,
 			HistoryContinuationPoint[] continuationPoints,
 			HistoryResult[] results) throws ServiceException {
-		return null;
+				return null;
 	}
 
 	@Override
 	public Object onBeginHistoryUpdate(ServiceContext serviceContext,
 			HistoryUpdateDetails[] details, HistoryUpdateResult[] results,
 			DiagnosticInfo[] diagnosticInfos) throws ServiceException {
-		return null;
+				return null;
 	}
 
 	@Override
@@ -126,7 +126,7 @@ public class MyHistorian implements HistoryManagerListener {
 			NodeId nodeId, UaNode node, DateTime[] reqTimes,
 			StatusCode[] operationResults, DiagnosticInfo[] operationDiagnostics)
 			throws StatusException {
-		ValueHistory history = variableHistories.get(node);
+				ValueHistory history = variableHistories.get(node);
 		if (history != null)
 			history.deleteAtTimes(reqTimes, operationResults,
 					operationDiagnostics);
@@ -139,7 +139,7 @@ public class MyHistorian implements HistoryManagerListener {
 			NodeId nodeId, UaNode node, byte[][] eventIds,
 			StatusCode[] operationResults, DiagnosticInfo[] operationDiagnostics)
 			throws StatusException {
-		EventHistory history = eventHistories.get(node);
+				EventHistory history = eventHistories.get(node);
 		if (history != null)
 			history.deleteEvents(eventIds, operationResults,
 					operationDiagnostics);
@@ -151,14 +151,14 @@ public class MyHistorian implements HistoryManagerListener {
 	public void onDeleteModified(ServiceContext serviceContext, Object dataset,
 			NodeId nodeId, UaNode node, DateTime startTime, DateTime endTime)
 			throws StatusException {
-		throw new StatusException(StatusCodes.Bad_HistoryOperationUnsupported);
+				throw new StatusException(StatusCodes.Bad_HistoryOperationUnsupported);
 	}
 
 	@Override
 	public void onDeleteRaw(ServiceContext serviceContext, Object dataset,
 			NodeId nodeId, UaNode node, DateTime startTime, DateTime endTime)
 			throws StatusException {
-		ValueHistory history = variableHistories.get(node);
+				ValueHistory history = variableHistories.get(node);
 		if (history != null)
 			history.deleteRaw(startTime, endTime);
 		else
@@ -171,14 +171,14 @@ public class MyHistorian implements HistoryManagerListener {
 			HistoryReadValueId[] nodesToRead,
 			HistoryContinuationPoint[] continuationPoints,
 			HistoryResult[] results) throws ServiceException {
-	}
+			}
 
 	@Override
 	public void onEndHistoryUpdate(ServiceContext serviceContext,
 			Object dataset, HistoryUpdateDetails[] details,
 			HistoryUpdateResult[] results, DiagnosticInfo[] diagnosticInfos)
 			throws ServiceException {
-	}
+			}
 
 	@Override
 	public Object onReadAtTimes(ServiceContext serviceContext, Object dataset,
@@ -186,7 +186,7 @@ public class MyHistorian implements HistoryManagerListener {
 			Object continuationPoint, DateTime[] reqTimes,
 			NumericRange indexRange, HistoryData historyData)
 			throws StatusException {
-		if (logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 			logger.debug("onReadAtTimes: reqTimes=[" + reqTimes.length + "] "
 					+ ((reqTimes.length < 20) ? Arrays.toString(reqTimes) : ""));
 		ValueHistory history = variableHistories.get(node);
@@ -203,7 +203,7 @@ public class MyHistorian implements HistoryManagerListener {
 			DateTime startTime, DateTime endTime,
 			UnsignedInteger numValuesPerNode, EventFilter filter,
 			HistoryEvent historyEvent) throws StatusException {
-		EventHistory history = eventHistories.get(node);
+				EventHistory history = eventHistories.get(node);
 		if (history != null) {
 			List<HistoryEventFieldList> events = new ArrayList<HistoryEventFieldList>();
 			int firstIndex = continuationPoint == null ? 0
@@ -246,7 +246,7 @@ public class MyHistorian implements HistoryManagerListener {
 			UnsignedInteger numValuesPerNode, Boolean returnBounds,
 			NumericRange indexRange, HistoryData historyData)
 			throws StatusException {
-		if (logger.isDebugEnabled())
+				if (logger.isDebugEnabled())
 			logger.debug("onReadRaw: startTime=" + startTime + " endTime="
 					+ endTime + "numValuesPerNode=" + numValuesPerNode);
 		ValueHistory history = variableHistories.get(node);
